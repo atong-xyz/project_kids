@@ -1,0 +1,409 @@
+<!--
+
+```shell
+xdg-open project_kids/maths_addition_subtraction.html
+
+  Addition & Subtraction Math Drill Game: Practice adding and subtracting 1-3 digit whole numbers
+```
+
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Addition & Subtraction Challenge!</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      margin: 0;
+      font-family: "Helvetica Neue", Arial, sans-serif;
+      background: #f9fbfd;
+      color: #333;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+    }
+    main { position: relative; width: 100%; max-width: 480px; padding: 1rem; box-sizing: border-box; }
+    h1, h2 { text-align: center; margin: 0.5rem 0; }
+    #start-screen { display: flex; flex-direction: column; gap: 1rem; }
+    .operations-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+    .digits-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.5rem;
+    }
+    .operations-grid label,
+    .digits-grid label {
+      font-size: 0.9rem;
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+    }
+    button {
+      font-size: 1rem;
+      padding: 0.8rem;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: transform 0.1s;
+    }
+    button:active { transform: scale(0.97); }
+    .primary-btn { background: #ff6f61; color: #fff; }  /* bright coral for kids */
+    .secondary-btn { background: #4caf50; color: #fff; }  /* fresh green */
+    .option-btn {
+      flex: 20.25;
+      background: #ffeb99;               /* brighter pastel yellow */
+      color: #333;
+      margin: 0;
+      padding: 1.2rem 5rem;                    /* larger touch target */
+      font-size: 1.6rem;                  /* bigger text */
+      border-radius: 12px;                /* extra roundness */
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      transition: background 0.2s, transform 0.1s;
+    }
+    .option-btn:active { transform: scale(0.96); }
+    .option-btn:hover { background: #ffe066; }
+    .option-btn.correct { background: #8bc34a; color: #fff; }
+    .option-btn.wrong { background: #e57373; color: #fff; }
+    #top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+    #timer { font-size: 1.2rem; font-weight: bold; color: #d32f2f; }
+    #score { font-size: 0.9rem; }
+    #game-screen { display: none; flex-direction: column; align-items: center; }
+    #question { font-size: 1.5rem; margin: 1rem 0; text-align: center; }
+    #end-screen { display: none; text-align: center; }
+    .feedback {
+      font-size: 1.2rem;
+      margin: 0.5rem 0;
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+    .feedback.show { opacity: 1; }
+    @media (max-width: 400px) {
+      .operations-grid { grid-template-columns: repeat(1, 1fr); }
+      .digits-grid { grid-template-columns: repeat(1, 1fr); }
+    }
+
+    /* Dark mode */
+    body.dark {
+      background: #1a1a2e;
+      color: #e0e0e0;
+    }
+    body.dark h1, body.dark h2 {
+      color: #fff;
+    }
+    body.dark .operations-grid label,
+    body.dark .digits-grid label {
+      color: #e0e0e0;
+    }
+    body.dark #timer {
+      color: #ff9800;
+    }
+    body.dark .option-btn {
+      background: #2d2d44;
+      color: #fff;
+    }
+    body.dark .option-btn:hover {
+      background: #40405a;
+    }
+    body.dark .option-btn.correct {
+      background: #4caf50;
+    }
+    body.dark .option-btn.wrong {
+      background: #f44336;
+    }
+
+    /* Theme toggle button */
+    .theme-toggle {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      width: 3.5rem;
+      height: 3.5rem;
+      border: none;
+      border-radius: 50%;
+      font-size: 1.5rem;
+      cursor: pointer;
+      background: rgba(255,255,255,0.15);
+      backdrop-filter: blur(10px);
+      color: inherit;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s ease;
+    }
+    .theme-toggle:hover {
+      background: rgba(255,255,255,0.25);
+      transform: scale(1.1);
+    }
+    body.dark .theme-toggle {
+      background: rgba(0,0,0,0.3);
+    }
+    body.dark .theme-toggle:hover {
+      background: rgba(0,0,0,0.5);
+    }
+
+    .option-row {
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+      margin-bottom: 0.8rem;
+    }
+
+    .key-label {
+      flex-shrink: 0;
+      font-size: 1rem;
+      font-weight: 700;
+      color: #fff;
+      padding: 0.6rem 0.8rem;
+      border-radius: 50%;
+      width: 2.2rem;
+      height: 2.2rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      transition: all 0.2s ease;
+      font-family: 'Helvetica Neue', sans-serif;
+    }
+    .key-label:hover {
+      transform: scale(1.1);
+      box-shadow: 0 6px 16px rgba(0,0,0,0.2);
+    }
+    body.dark .key-label {
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    }
+    body.dark .key-label:hover {
+      box-shadow: 0 6px 16px rgba(0,0,0,0.4);
+    }
+
+    /* Colorful key labels for kids */
+    .option-row:nth-of-type(1) .key-label { background: linear-gradient(135deg, #ff6b6b, #ee5a24); }
+    .option-row:nth-of-type(2) .key-label { background: linear-gradient(135deg, #feca57, #ff9ff3); }
+    .option-row:nth-of-type(3) .key-label { background: linear-gradient(135deg, #48dbfb, #0abde3); }
+    .option-row:nth-of-type(4) .key-label { background: linear-gradient(135deg, #10ac84, #1dd1a1); }
+
+    body.dark .option-row:nth-of-type(1) .key-label { background: linear-gradient(135deg, #ff4757, #ff3838); }
+    body.dark .option-row:nth-of-type(2) .key-label { background: linear-gradient(135deg, #ffa502, #ff6348); }
+    body.dark .option-row:nth-of-type(3) .key-label { background: linear-gradient(135deg, #3742fa, #2f3542); }
+    body.dark .option-row:nth-of-type(4) .key-label { background: linear-gradient(135deg, #00b894, #00a085); }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Addition & Subtraction Challenge!</h1>
+    <button id="theme-toggle" class="theme-toggle" aria-label="Toggle dark/light mode">🌙</button>
+
+    <section id="start-screen" aria-label="Start screen">
+      <p>Pick operations and digit lengths to practice!</p>
+      <div class="operations-grid">
+        <label><input type="checkbox" value="add">Addition (+)</label>
+        <label><input type="checkbox" value="sub">Subtraction (-)</label>
+      </div>
+      <div class="digits-grid">
+        <label><input type="checkbox" value="1">1-digit</label>
+        <label><input type="checkbox" value="2">2-digit</label>
+        <label><input type="checkbox" value="3">3-digit</label>
+      </div>
+      <button id="start-btn" class="primary-btn" aria-label="Start Game">Start Game</button>
+    </section>
+
+    <section id="game-screen" aria-label="Game screen">
+      <div id="top-bar">
+        <div id="timer">Time: 60s</div>
+        <div id="score">Correct: 0 | Wrong: 0</div>
+      </div>
+      <div id="question" aria-live="polite"></div>
+      <div id="options" role="list">
+        <div class="option-row">
+          <span class="key-label">A</span>
+          <button class="option-btn" data-index="0"></button>
+        </div>
+        <div class="option-row">
+          <span class="key-label">B</span>
+          <button class="option-btn" data-index="1"></button>
+        </div>
+        <div class="option-row">
+          <span class="key-label">C</span>
+          <button class="option-btn" data-index="2"></button>
+        </div>
+        <div class="option-row">
+          <span class="key-label">D</span>
+          <button class="option-btn" data-index="3"></button>
+        </div>
+      </div>
+      <div id="feedback" class="feedback" aria-live="assertive"></div>
+    </section>
+
+    <section id="end-screen" aria-label="End screen">
+      <h2>Game Over!</h2>
+      <p id="final-score"></p>
+      <button id="restart-btn" class="secondary-btn" aria-label="Play Again">Play Again</button>
+    </section>
+  </main>
+
+  <script>
+    const state = {
+      selectedOperations: [],
+      selectedDigits: [],
+      timer: 60,
+      intervalId: null,
+      correct: 0,
+      wrong: 0,
+      questionIndex: 0,
+      questionsPool: [],
+      answering: false
+    };
+    function $(s){return document.querySelector(s);}
+    function $$(s){return Array.from(document.querySelectorAll(s));}
+    function generatePool(){
+      const pool = [];
+      const operations = state.selectedOperations;
+      const digits = state.selectedDigits;
+      function randomNum(d) {
+        if (d === 1) return Math.floor(Math.random() * 9) + 1;
+        const min = Math.pow(10, d - 1);
+        const max = Math.pow(10, d) - 1;
+        return Math.floor(Math.random() * (max - min + 1)) + min;
+      }
+      while (pool.length < 30) {
+        const op = operations[Math.floor(Math.random() * operations.length)];
+        const d1 = digits[Math.floor(Math.random() * digits.length)];
+        const d2 = digits[Math.floor(Math.random() * digits.length)];
+        let num1, num2, ans, symbol;
+        if (op === 'add') {
+          num1 = randomNum(d1);
+          num2 = randomNum(d2);
+          ans = num1 + num2;
+          symbol = '+';
+        } else { // 'sub'
+          const dl = Math.max(d1, d2);
+          const ds = Math.min(d1, d2);
+          num1 = randomNum(dl);
+          num2 = randomNum(ds);
+          while (num1 <= num2) {
+            num1 = randomNum(dl);
+            num2 = randomNum(ds);
+          }
+          ans = num1 - num2;
+          symbol = '-';
+        }
+        const distractors = new Set();
+        while (distractors.size < 3) {
+          const delta = Math.floor(Math.random() * 5) + 1;
+          const wrong = Math.random() < 0.5 ? ans + delta : Math.max(0, ans - delta);
+          if (wrong !== ans) distractors.add(wrong);
+        }
+        const opts = [ans, ...Array.from(distractors)];
+        for (let i = opts.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [opts[i], opts[j]] = [opts[j], opts[i]];
+        }
+        pool.push({num1, num2, symbol, answer: ans, options: opts});
+      }
+      state.questionsPool = pool;
+    }
+    function renderQuestion(){
+      const q = state.questionsPool[state.questionIndex];
+      $('#question').textContent = `What is ${q.num1} ${q.symbol} ${q.num2}?`;
+      $$('#options .option-btn').forEach((b, i) => { b.textContent = q.options[i]; b.className = 'option-btn'; });
+      $('#feedback').textContent = '';
+    }
+    function startTimer(){
+      $('#timer').textContent = `Time: ${state.timer}s`;
+      state.intervalId = setInterval(() => {
+        state.timer--;
+        $('#timer').textContent = `Time: ${state.timer}s`;
+        if (state.timer <= 0) endGame();
+      }, 1000);
+    }
+    function endGame(){
+      clearInterval(state.intervalId);
+      $('#game-screen').style.display = 'none';
+      $('#final-score').textContent = `You got ${state.correct} correct out of ${state.correct + state.wrong} attempts!`;
+      $('#end-screen').style.display = 'block';
+    }
+    function handleAnswer(val, btn){
+      if (state.answering) return;
+      state.answering = true;
+      const q = state.questionsPool[state.questionIndex];
+      const isCorrect = val === q.answer;
+      if (isCorrect) {
+        state.correct++;
+        $('#feedback').textContent = 'Correct!';
+        btn.classList.add('correct');
+      } else {
+        state.wrong++;
+        $('#feedback').textContent = `Wrong! The answer is ${q.answer}`;
+        btn.classList.add('wrong');
+      }
+      $('#feedback').className = 'feedback show';
+      $('#score').textContent = `Correct: ${state.correct} | Wrong: ${state.wrong}`;
+      setTimeout(() => {
+        btn.classList.remove('correct', 'wrong');
+        state.questionIndex = (state.questionIndex + 1) % state.questionsPool.length;
+        renderQuestion();
+        state.answering = false;
+      }, 800);
+    }
+    $('#start-btn').addEventListener('click', () => {
+      const opChecks = $$('.operations-grid input[type="checkbox"]:checked');
+      const digitChecks = $$('.digits-grid input[type="checkbox"]:checked');
+      state.selectedOperations = opChecks.map(c => c.value);
+      state.selectedDigits = digitChecks.map(c => Number(c.value));
+      if (state.selectedOperations.length === 0 || state.selectedDigits.length === 0) {
+        alert('Please select at least one operation and one digit length!');
+        return;
+      }
+      state.timer = 60; state.correct = 0; state.wrong = 0; state.questionIndex = 0;
+      $('#score').textContent = 'Correct: 0 | Wrong: 0';
+      $('#start-screen').style.display = 'none';
+      generatePool();
+      renderQuestion();
+      $('#game-screen').style.display = 'flex';
+      startTimer();
+    });
+    $$('#options .option-btn').forEach(b => b.addEventListener('click', () => { handleAnswer(Number(b.textContent), b); }));
+    document.addEventListener('keydown', e => {
+      if ($('#game-screen').style.display !== 'flex') return;
+      const map = {'a': 0, 'b': 1, 'c': 2, 'd': 3};
+      const idx = map[e.key.toLowerCase()];
+      if (idx !== undefined) {
+        const btn = $$('#options .option-btn')[idx];
+        if (btn) { handleAnswer(Number(btn.textContent), btn); }
+        e.preventDefault();
+      }
+    });
+    $('#restart-btn').addEventListener('click', () => {
+      $('#start-screen').style.display = 'flex';
+      $('#end-screen').style.display = 'none';
+      $$('#start-screen input[type="checkbox"]').forEach(cb => cb.checked = false);
+    });
+
+    // Theme toggle
+    const themeToggle = $('#theme-toggle');
+    let isDarkMode = localStorage.getItem('darkMode') === 'true';
+    if (isDarkMode) {
+      document.body.classList.add('dark');
+    }
+    themeToggle.textContent = isDarkMode ? '☀️' : '🌙';
+    themeToggle.addEventListener('click', () => {
+      isDarkMode = !isDarkMode;
+      document.body.classList.toggle('dark', isDarkMode);
+      themeToggle.textContent = isDarkMode ? '☀️' : '🌙';
+      localStorage.setItem('darkMode', isDarkMode);
+    });
+  </script>
+</body>
+</html>
